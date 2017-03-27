@@ -65,19 +65,21 @@ namespace ChromaKeyServer.Controllers
                 string prog  = "C:\\ffmpeg\\bin\\ffmpeg";
                 string param = "-i \"" + imgFileName + "\" "
                                         + "-i \"" + vidFileName + "\" "
-                                        + "-filter_complex \"[1:v]colorkey=0x008A00:0.32:0.1[ckout];[0:v][ckout]overlay[out]\" "
-                                        + "-map \"[out]\" \"" + outFileName + "\" ";
+                                        + "-filter_complex \"[1:v]colorkey=0x008A00:0.32:0.1[ckout];[0:v][ckout]overlay[out];[out]setpts=2.5*PTS[final]\" "
+                                        + "-map \"[final]\" \"" + outFileName + "\" ";
                 Debug.WriteLine("Ejecutando:");
                 Debug.WriteLine(prog + " " + param);
+                var process = Process.Start(prog, param);
+                process.WaitForExit();
 
-                BackgroundWorker bw = new BackgroundWorker();
-                bw.WorkerReportsProgress = true;
-                bw.DoWork += new DoWorkEventHandler(
-                    delegate (object o, DoWorkEventArgs args)
-                    {
-                        Process.Start(prog, param);
-                    });
-                bw.RunWorkerAsync();
+                //BackgroundWorker bw = new BackgroundWorker();
+                //bw.WorkerReportsProgress = true;
+                //bw.DoWork += new DoWorkEventHandler(
+                //    delegate (object o, DoWorkEventArgs args)
+                //    {
+                //var process = Process.Start(prog, param);
+                //        });
+                //    bw.RunWorkerAsync();
             }
             Debug.WriteLine("-- Fin POST: api/ChromaKey");
             return "OK";
