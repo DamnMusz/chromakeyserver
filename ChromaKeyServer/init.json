@@ -4,10 +4,12 @@
   "BACKGROUNDS_EXTENSION": ".jpg",
   "OUTPUT_VID_PATH": "c:\\users\\dionisio\\documents\\visual studio 2015\\Projects\\ChromaKeyServer\\ChromaKeyServer\\Videos\\Out\\",
   "OUTPUT_VID_EXTENSION": ".mov",
+  "OUTPUT_VID_EXTENSION_2": ".mp4",
   "OUTPUT_THUMBNAIL_RELATIVE_PATH": "Videos\\Thumbs\\",
   "FFMPEG_BIN_PATH": "C:\\ffmpeg\\bin\\",
   "COLORKEY": "008A00",
   "SIMILARITY": "0.32",
   "BLEND": "0.1",
-  "FRAME_RATE_RELATION": "2.5"
+  "FRAME_RATE_RELATION": "2.5",
+  "THUMB_SCALE": "480"
 }
