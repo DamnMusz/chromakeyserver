@@ -350,6 +350,7 @@
     <Folder Include="obj\" />
     <Folder Include="Videos\Fondos\" />
     <Folder Include="Videos\Out\" />
+    <Folder Include="Videos\Thumbs\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff" />

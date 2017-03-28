@@ -79,7 +79,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>03/22/2017 16:19:26</publishTime>
     </File>
     <File Include="bin/ChromaKeyServer.dll">
-      <publishTime>03/27/2017 18:48:48</publishTime>
+      <publishTime>03/28/2017 12:07:35</publishTime>
     </File>
     <File Include="bin/ChromaKeyServer.dll.config">
       <publishTime>03/22/2017 16:19:41</publishTime>
@@ -320,6 +320,12 @@ by editing this MSBuild file. In order to learn more about this please visit htt
     </File>
     <File Include="Global.asax">
       <publishTime>03/22/2017 16:19:03</publishTime>
+    </File>
+    <File Include="index.html">
+      <publishTime>03/28/2017 11:17:04</publishTime>
+    </File>
+    <File Include="init.json">
+      <publishTime>03/28/2017 11:45:42</publishTime>
     </File>
     <File Include="packages.config">
       <publishTime>03/22/2017 16:19:40</publishTime>

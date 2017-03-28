@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Web;
 using System.Web.Http;
 
@@ -15,59 +16,73 @@ namespace ChromaKeyServer.Controllers
 {
     public class ChromaKeyController : ApiController
     {
-        // GET: api/ChromaKey
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET: api/ChromaKey/5
-        public string Get(int id)
-        {
-            return "value";
-        }
-
         // POST: api/ChromaKey
         [HttpPost]
-        public void Post(HttpRequestMessage request, [FromUri] int background_id)
+        public string Post(HttpRequestMessage request, [FromUri] int background_id)
         {
             var context = new HttpContextWrapper(HttpContext.Current);
 
+            // Leo los parametros con los que trabajar desde el init.json
             Init init;
             using (StreamReader sr = new StreamReader(HttpContext.Current.Server.MapPath("~") + "/init.json"))
             {
                 init = JsonConvert.DeserializeObject<Init>(sr.ReadToEnd());
             }
 
+            string thumbName = "";
+
             for (int i = 0; i < context.Request.Files.Count; ++i)
             {
                 HttpPostedFileBase file = context.Request.Files[i];
                 string vidFileName = Path.GetFullPath(init.ORIGINAL_VID_PATH + file.FileName);
                 string imgFileName = Path.GetFullPath(init.BACKGROUNDS_PATH + background_id+ init.BACKGROUNDS_EXTENSION);
-                string outFileName = Path.GetFullPath(init.OUTPUT_VID_PATH + file.FileName+"_"+background_id + init.OUTPUT_VID_EXTENSION);
-
-                int outFile_no = 2;
-                while(File.Exists(outFileName))
-                    outFileName = Path.GetFullPath(HttpContext.Current.Server.MapPath("~") + "\\Videos\\Out\\" + file.FileName + "_" + background_id + " ("+(outFile_no++)+").mov");
+                string vidName = file.FileName + "_" + background_id + init.OUTPUT_VID_EXTENSION;
+                string outFileName = Path.GetFullPath(init.OUTPUT_VID_PATH + vidName);
                 
+                // Si el nombre de video de salida ya existe voy probando agregandole (2), (3).. (n)
+                int outFile_no = 2;
+                while (File.Exists(outFileName))
+                {
+                    vidName = file.FileName + "_" + background_id + " (" + (outFile_no++) + ")"+ init.OUTPUT_VID_EXTENSION;
+                    outFileName = Path.GetFullPath(init.OUTPUT_VID_PATH + vidName);
+                }
+                
+                // Si el nombre de video original ya existe voy probando agregandole (2), (3).. (n)
                 int vidFile_no = 2;
                 while (File.Exists(vidFileName))
                 {
                     string vidFile_first = Path.GetFileNameWithoutExtension(file.FileName);
                     string extension = Path.GetExtension(file.FileName);
-                    vidFileName = Path.GetFullPath(HttpContext.Current.Server.MapPath("~") + "\\Videos\\Original\\" + vidFile_first + " (" + (vidFile_no++) + ")"+ extension);
+                    vidFileName = Path.GetFullPath(init.ORIGINAL_VID_PATH + vidFile_first + " (" + (vidFile_no++) + ")"+ extension);
                 }
 
+                // Guardo el video original con fondo verde, tal cual lo recibi
                 file.SaveAs(vidFileName);
 
-                string prog  = init.FFMPEG_BIN_PATH;
+                string prog  = init.FFMPEG_BIN_PATH + "ffmpeg";
                 string param = "-i \"" + imgFileName + "\" "
                                         + "-i \"" + vidFileName + "\" "
                                         + "-filter_complex \"[1:v]colorkey=0x"+ init.COLORKEY+":"+ init.SIMILARITY+":"+ init.BLEND+"[ckout];[0:v][ckout]overlay[out];[out]setpts="+init.FRAME_RATE_RELATION+"*PTS[final]\" "
                                         + "-map \"[final]\" \"" + outFileName + "\" ";
+
+                // Ejecuto el proceso de chroma key
                 var process = Process.Start(prog, param);
                 process.WaitForExit();
+
+                thumbName = init.OUTPUT_THUMBNAIL_RELATIVE_PATH + vidName;
+                string thumbOutFile = Path.GetFullPath(HttpContext.Current.Server.MapPath("~") + init.OUTPUT_THUMBNAIL_RELATIVE_PATH + Path.GetFileNameWithoutExtension(thumbName) + ".png");
+                string thumbParam = " -i \"" + outFileName + "\" -ss 00:00:05.435 -vframes 1 -filter:v scale=\"480:-1\" \"" + thumbOutFile + "\"";
+
+                // No deberia existir otro thumb con el nombre del video (el cual ya verifica que sea siempre distinto). Asi que si existe borra el anterior.
+                if(File.Exists(thumbOutFile))
+                    File.Delete(thumbOutFile);
+
+                // Ejecuto el proceso de creacion del thumbnail
+                var process2 = Process.Start(prog, thumbParam);
+                process2.WaitForExit();
             }
+
+            return (init.OUTPUT_THUMBNAIL_RELATIVE_PATH + Path.GetFileNameWithoutExtension(thumbName) + ".png").Replace("\\\\","/");
         }
     }
 }
