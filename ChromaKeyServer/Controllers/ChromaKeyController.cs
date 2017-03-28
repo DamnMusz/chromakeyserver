@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ChromaKeyServer.Models;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -27,18 +29,22 @@ namespace ChromaKeyServer.Controllers
 
         // POST: api/ChromaKey
         [HttpPost]
-        public string Post(HttpRequestMessage request, [FromUri] int background_id)
+        public void Post(HttpRequestMessage request, [FromUri] int background_id)
         {
-            Debug.WriteLine("POST: api/ChromaKey");
-            Debug.WriteLine("background_id = " + background_id);
             var context = new HttpContextWrapper(HttpContext.Current);
+
+            Init init;
+            using (StreamReader sr = new StreamReader(HttpContext.Current.Server.MapPath("~") + "/init.json"))
+            {
+                init = JsonConvert.DeserializeObject<Init>(sr.ReadToEnd());
+            }
 
             for (int i = 0; i < context.Request.Files.Count; ++i)
             {
                 HttpPostedFileBase file = context.Request.Files[i];
-                string vidFileName = Path.GetFullPath(HttpContext.Current.Server.MapPath("~") + "\\Videos\\Original\\" + file.FileName);
-                string imgFileName = Path.GetFullPath(HttpContext.Current.Server.MapPath("~") + "\\Videos\\Fondos\\" + background_id+".jpg");
-                string outFileName = Path.GetFullPath(HttpContext.Current.Server.MapPath("~") + "\\Videos\\Out\\" + file.FileName+"_"+background_id + ".mov");
+                string vidFileName = Path.GetFullPath(init.ORIGINAL_VID_PATH + file.FileName);
+                string imgFileName = Path.GetFullPath(init.BACKGROUNDS_PATH + background_id+ init.BACKGROUNDS_EXTENSION);
+                string outFileName = Path.GetFullPath(init.OUTPUT_VID_PATH + file.FileName+"_"+background_id + init.OUTPUT_VID_EXTENSION);
 
                 int outFile_no = 2;
                 while(File.Exists(outFileName))
@@ -53,46 +59,15 @@ namespace ChromaKeyServer.Controllers
                 }
 
                 file.SaveAs(vidFileName);
-                Debug.WriteLine("Archivo video: " + vidFileName);
-                Debug.WriteLine("Archivo fondo: " + imgFileName);
-                Debug.WriteLine("Archivo salida: " + outFileName);
 
-                if(File.Exists(outFileName))
-                    Debug.WriteLine("YA EXISTE!!");
-                else
-                    Debug.WriteLine("OK. NO EXISTE.");
-
-                string prog  = "C:\\ffmpeg\\bin\\ffmpeg";
+                string prog  = init.FFMPEG_BIN_PATH;
                 string param = "-i \"" + imgFileName + "\" "
                                         + "-i \"" + vidFileName + "\" "
-                                        + "-filter_complex \"[1:v]colorkey=0x008A00:0.32:0.1[ckout];[0:v][ckout]overlay[out];[out]setpts=2.5*PTS[final]\" "
+                                        + "-filter_complex \"[1:v]colorkey=0x"+ init.COLORKEY+":"+ init.SIMILARITY+":"+ init.BLEND+"[ckout];[0:v][ckout]overlay[out];[out]setpts="+init.FRAME_RATE_RELATION+"*PTS[final]\" "
                                         + "-map \"[final]\" \"" + outFileName + "\" ";
-                Debug.WriteLine("Ejecutando:");
-                Debug.WriteLine(prog + " " + param);
                 var process = Process.Start(prog, param);
                 process.WaitForExit();
-
-                //BackgroundWorker bw = new BackgroundWorker();
-                //bw.WorkerReportsProgress = true;
-                //bw.DoWork += new DoWorkEventHandler(
-                //    delegate (object o, DoWorkEventArgs args)
-                //    {
-                //var process = Process.Start(prog, param);
-                //        });
-                //    bw.RunWorkerAsync();
             }
-            Debug.WriteLine("-- Fin POST: api/ChromaKey");
-            return "OK";
-        }
-
-        // PUT: api/ChromaKey/5
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE: api/ChromaKey/5
-        public void Delete(int id)
-        {
         }
     }
 }
